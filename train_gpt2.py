@@ -111,6 +111,9 @@ class GPT(nn.Module):
         ))
         # 线性层，最终的分类器
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias= False)
+        
+        # weight sharing scheme
+        self.transformer.wte.weight = self.lm_head.weight
     
     def forward(self, idx, targets = None):
         # idx is of shape (B, T)
