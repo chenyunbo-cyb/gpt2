@@ -193,8 +193,13 @@ class GPT(nn.Module):
 num_return_sequences = 5
 max_length = 30
 device = 'cuda'
+if torch.cuda.is_available():
+    device = 'cuda'
+else: device = 'cpu'
+print(f"using device {device}")
 
-model = GPT.from_pretrained('gpt2')
+# model = GPT.from_pretrained('gpt2')
+model = GPT(GPTConfig)
 model.eval()
 model.to(device)
 print(" Yes! First Success! ")
