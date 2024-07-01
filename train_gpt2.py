@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
+import time
+
 
 # ------------------------------------------------------------------------------------
 
@@ -196,7 +198,7 @@ device = 'cuda'
 if torch.cuda.is_available():
     device = 'cuda'
 else: device = 'cpu'
-device = 'cpu'
+# device = 'cpu'
 print(f"using device {device}")
 
 
@@ -210,15 +212,28 @@ text = text[:1000]
 tockens = enc.encode(text)
 B, T = 4, 32
 buf = torch.tensor(tockens[:B*T + 1])
+buf = buf.to(device)
 x = buf[:-1].view(B, T)
 y = buf[1:].view(B, T)
 
 model = GPT(GPTConfig)
 model.to(device)
-logits, loss = model(x, y)
+
+optimizer = torch.optim.AdamW(model.parameters(), lr = 3e-4)
+start = time.time()
+for i in range(50):
+    optimizer.zero_grad()
+    logits, loss = model(x, y)
+    loss.backward()
+    optimizer.step()
+    print(f"step {i}, loss = {loss.item()}")
+end = time.time()
+print("total time：", end-start)
+
+# logits, loss = model(x, y)
 
 # print(logits.shape)
-print(loss)
+# print(loss)
 
 import sys; sys.exit(0)
 # model = GPT.from_pretrained('gpt2')
