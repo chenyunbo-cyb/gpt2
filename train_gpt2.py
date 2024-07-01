@@ -110,7 +110,7 @@ class GPT(nn.Module):
         # 线性层，最终的分类器
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias= False)
     
-    def forward(self, idx):
+    def forward(self, idx, targets = None):
         # idx is of shape (B, T)
         B, T = idx.size()
         assert T<=self.config.block_size, f"T:{T} is bigger than block_size:{self.config.block_size}"
@@ -125,7 +125,10 @@ class GPT(nn.Module):
         
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)  # shape (B, T, vocab_size)
-        return logits
+        loss = None
+        if targets is not None:
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+        return logits, loss
 
 
     
@@ -212,9 +215,10 @@ y = buf[1:].view(B, T)
 
 model = GPT(GPTConfig)
 model.to(device)
-logits = model(x)
+logits, loss = model(x, y)
 
-print(logits.shape)
+# print(logits.shape)
+print(loss)
 
 import sys; sys.exit(0)
 # model = GPT.from_pretrained('gpt2')
