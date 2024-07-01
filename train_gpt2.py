@@ -253,8 +253,16 @@ else: device = 'cpu'
 # device = 'cpu'
 print(f"using device {device}")
 
+torch.manual_seed(1337)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed(1337)
 
-train_loader = DataLoaderLite(B=4, T = 32)
+train_loader = DataLoaderLite(B=32, T = 128)
+
+# "highest", float32
+#  "high", TF32
+# "medium", bfloat16
+# torch.set_float32_matmul_precision('high') 
 
 model = GPT(GPTConfig)
 model.to(device)
@@ -262,13 +270,22 @@ model.to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr = 3e-4)
 start = time.time()
 for i in range(50):
+    t0 = time.time()
     x, y = train_loader.next_batch()
     x, y = x.to(device), y.to(device)
     optimizer.zero_grad()
-    logits, loss = model(x, y)
+    with torch.autocast(device_type=device, dtype=torch.float16):
+        logits, loss = model(x, y)
+        # import code; code.interact(local = locals()) 
+    # import code; code.interact(local = locals()) # python调试技巧。停止执行打开交互调试
     loss.backward()
     optimizer.step()
-    print(f"step {i}, loss = {loss.item()}")
+
+    torch.cuda.synchronize()
+    t1 = time.time()
+    dt = (t1 - t0) * 1000
+    tokens_per_sec = (train_loader.B * train_loader.T)/(t1 - t0)
+    print(f"step {i}, loss: {loss.item()}, dt: {dt}ms, tok/sec:{tokens_per_sec}")
 end = time.time()
 print("total time：", end-start)
 
