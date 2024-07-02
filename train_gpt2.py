@@ -273,7 +273,7 @@ model = GPT(GPTConfig(vocab_size = 50304))
 model.to(device)
 # model = torch.compile(model)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr = 3e-4)
+optimizer = torch.optim.AdamW(model.parameters(), lr = 3e-4, betas=(0.9, 0.95), eps=1e-8)
 start = time.time()
 for i in range(50):
     t0 = time.time()
